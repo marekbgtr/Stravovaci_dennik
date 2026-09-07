@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Denník</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: #F7F5F0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #2B2B26;
+  }
+  .serif {
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; }
+  ::selection { background: #E6D9C7; }
+  select:focus, input:focus, textarea:focus, button:focus { outline: none; }
+
+  #app { min-height: 100vh; background: #F7F5F0; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 32px 20px 120px; }
+
+  header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; }
+  h1 { font-size: 30px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  header p { margin: 4px 0 0; font-size: 14px; color: #8A8478; }
+  .export-btn { background: none; border: 1px solid #E3DDD0; border-radius: 8px; padding: 8px; color: #8A8478; }
+  .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .import-confirm { font-size: 13px; color: #5A5548; margin: 0 0 16px; line-height: 1.5; }
+  .import-choice { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .import-choice button { width: 100%; text-align: left; padding: 12px 14px; border-radius: 10px; border: 1px solid #E3DDD0; background: transparent; }
+  .import-choice button .opt-title { font-size: 14px; font-weight: 600; display: block; }
+  .import-choice button .opt-sub { font-size: 12px; color: #8A8478; display: block; margin-top: 2px; }
+  .import-choice button.merge { border-color: #5C7A6B; }
+  .import-choice button.merge .opt-title { color: #5C7A6B; }
+  .import-choice button.replace .opt-title { color: #B0472E; }
+  .import-choice button.replace { border-color: #B0472E; }
+  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #2B2B26; color: #FCFBF8; font-size: 13px; padding: 10px 18px; border-radius: 20px; z-index: 60; }
+
+  .datenav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .datenav button { background: none; border: none; font-size: 20px; color: #8A6B4F; padding: 4px 10px; }
+  .datenav-center { text-align: center; }
+  .datenav-day { font-size: 17px; font-weight: 600; text-transform: capitalize; }
+  .datenav select { appearance: none; border: none; background: transparent; font-size: 12px; color: #8A8478; text-align: center; }
+
+  .error-banner { background: #F7E4DE; color: #8A3420; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+
+  .empty { text-align: center; padding: 60px 20px; color: #A39D8F; }
+  .empty p:first-child { font-size: 16px; margin: 0; }
+  .empty p:last-child { font-size: 13px; margin-top: 6px; }
+
+  .timeline { position: relative; }
+  .timeline-line { position: absolute; left: 15px; top: 6px; bottom: 6px; width: 1px; background: #E3DDD0; }
+
+  .row { display: flex; gap: 14px; margin-bottom: 14px; position: relative; }
+  .row-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 1; border: 2px solid #F7F5F0; }
+  .row-card { flex: 1; background: #FCFBF8; border: 1px solid #EBE5D8; border-radius: 10px; padding: 10px 14px; cursor: pointer; }
+  .row-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .row-time { font-size: 11px; color: #A39D8F; font-weight: 500; }
+  .row-cat { font-size: 11px; font-weight: 600; margin-left: 8px; }
+  .row-title { font-size: 15px; margin-top: 3px; font-weight: 500; }
+  .row-sub { font-size: 12px; color: #8A8478; margin-top: 2px; }
+  .row-linked { font-size: 12px; color: #8A8478; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+  .row-detail { margin-top: 10px; padding-top: 10px; border-top: 1px solid #EBE5D8; display: none; }
+  .row-detail.open { display: block; }
+  .row-note { font-size: 13px; color: #5A5548; margin: 0 0 10px; line-height: 1.5; }
+  .row-actions { display: flex; gap: 14px; }
+  .row-actions button { background: none; border: none; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; padding: 0; }
+  .chevron { transition: transform 0.15s; display: inline-flex; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .actionbar { position: fixed; bottom: 0; left: 0; right: 0; background: #FCFBF8; border-top: 1px solid #E3DDD0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); }
+  .actionbar-inner { max-width: 640px; margin: 0 auto; display: flex; gap: 10px; }
+  .action-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; border: none; border-radius: 12px; }
+  .action-btn span { font-size: 12px; font-weight: 600; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(43,43,38,0.4); display: flex; align-items: flex-end; z-index: 50; }
+  .modal-sheet { background: #FCFBF8; width: 100%; border-radius: 18px 18px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .modal-title-wrap { display: flex; align-items: center; gap: 8px; }
+  .modal-icon-badge { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .modal-title { font-size: 17px; font-weight: 600; }
+  .modal-close { background: none; border: none; color: #A39D8F; }
+
+  .field-title { width: 100%; font-size: 16px; padding: 10px 0; border: none; border-bottom: 1px solid #E3DDD0; margin-bottom: 14px; background: transparent; }
+  .field-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .field-col { flex: 1; }
+  .field-col.wide { flex: 1.4; }
+  .field-label { font-size: 11px; color: #A39D8F; display: block; margin-bottom: 4px; }
+  .time-input-wrap { display: flex; align-items: center; gap: 6px; border: 1px solid #E3DDD0; border-radius: 8px; padding: 8px 10px; }
+  .time-input-wrap input { border: none; background: transparent; font-size: 14px; width: 100%; }
+  .field-select { border: 1px solid #E3DDD0; border-radius: 8px; padding: 8px 10px; font-size: 14px; width: 100%; background: transparent; }
+
+  .severity-row { display: flex; gap: 8px; }
+  .severity-btn { flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid #E3DDD0; background: transparent; color: #8A8478; font-size: 13px; }
+  .severity-btn.active { border: 1.5px solid #B0472E; background: #F7E4DE; color: #B0472E; font-weight: 600; }
+
+  .field-note { width: 100%; border: 1px solid #E3DDD0; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 16px; resize: none; }
+  .submit-btn { width: 100%; padding: 13px 0; border-radius: 10px; border: none; color: #FCFBF8; font-size: 15px; font-weight: 600; }
+  .submit-btn:disabled { background: #DDD6C7 !important; }
+
+  .link-list-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 4px; border: none; border-bottom: 1px solid #EBE5D8; background: transparent; text-align: left; }
+  .link-list-icon { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .link-list-time { font-size: 11px; color: #A39D8F; }
+  .link-list-title { font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var MEAL_CATEGORIES = ["Raňajky", "Desiata", "Obed", "Olovrant", "Večera", "Iné"];
+  var ACTIVITY_TYPES = ["Cvičenie", "Sedenie", "Meditácia", "Chôdza", "Spánok", "Iné"];
+  var SEVERITY = [
+    { v: 1, label: "Mierne" },
+    { v: 2, label: "Stredné" },
+    { v: 3, label: "Silné" }
+  ];
+  var STORAGE_KEY = "denik_entries_v1";
+
+  var TYPE_META = {
+    jedlo: { label: "Jedlo", color: "#8A6B4F", bg: "#F1E9DF", svg: iconMeal },
+    symptom: { label: "Symptóm", color: "#B0472E", bg: "#F7E4DE", svg: iconSymptom },
+    aktivita: { label: "Aktivita", color: "#5C7A6B", bg: "#E6EEE9", svg: iconActivity }
+  };
+
+  // ---------- state ----------
+  var state = {
+    entries: loadEntries(),
+    selectedDate: todayISO(),
+    modal: null,
+    linkTarget: null,
+    error: null,
+    openRows: {},
+    pendingImport: null, // parsed entries array, awaiting merge/replace choice
+    toast: null
+  };
+
+  // ---------- storage ----------
+  function loadEntries() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveEntries() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries));
+      state.error = null;
+    } catch (e) {
+      state.error = "Uloženie sa nepodarilo (pamäť prehliadača môže byť plná).";
+    }
+  }
+
+  // ---------- helpers ----------
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+  function todayISO() {
+    var d = new Date();
+    var tz = d.getTimezoneOffset() * 60000;
+    return new Date(d - tz).toISOString().slice(0, 10);
+  }
+  function nowHM() {
+    var d = new Date();
+    var h = String(d.getHours()).padStart(2, "0");
+    var m = String(d.getMinutes()).padStart(2, "0");
+    return h + ":" + m;
+  }
+  function formatDateHuman(iso) {
+    var d = new Date(iso + "T00:00:00");
+    var days = ["nedeľa","pondelok","utorok","streda","štvrtok","piatok","sobota"];
+    var months = ["januára","februára","marca","apríla","mája","júna","júla","augusta","septembra","októbra","novembra","decembra"];
+    return days[d.getDay()] + ", " + d.getDate() + ". " + months[d.getMonth()];
+  }
+  function esc(s) {
+    if (s === undefined || s === null) return "";
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // ---------- icons ----------
+  function svgWrap(inner, size, color, sw) {
+    size = size || 16; color = color || "currentColor"; sw = sw || 2;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+  }
+  function iconMeal(size, color) {
+    return svgWrap('<path d="M3 2v7c0 1.1.9 2 2 2h2a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>', size, color);
+  }
+  function iconSymptom(size, color) {
+    return svgWrap('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>', size, color);
+  }
+  function iconActivity(size, color) {
+    return svgWrap('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>', size, color);
+  }
+  function iconClock(size, color) {
+    return svgWrap('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', size, color);
+  }
+  function iconX(size, color) {
+    return svgWrap('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>', size, color);
+  }
+  function iconChevron(size, color) {
+    return svgWrap('<polyline points="6 9 12 15 18 9"/>', size, color);
+  }
+  function iconTrash(size, color) {
+    return svgWrap('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>', size, color);
+  }
+  function iconLink(size, color) {
+    return svgWrap('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>', size, color);
+  }
+  function iconDownload(size, color) {
+    return svgWrap('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>', size, color);
+  }
+  function iconUpload(size, color) {
+    return svgWrap('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>', size, color);
+  }
+
+  // ---------- data ops ----------
+  function addEntry(entry) {
+    state.entries.push(Object.assign({ id: uid(), date: state.selectedDate }, entry));
+    saveEntries();
+    render();
+  }
+  function deleteEntry(id) {
+    state.entries = state.entries.filter(function (e) { return e.id !== id && e.linkedTo !== id; });
+    saveEntries();
+    render();
+  }
+  function linkSymptomTo(symptomId, targetId) {
+    state.entries = state.entries.map(function (e) {
+      if (e.id === symptomId) { var c = Object.assign({}, e); c.linkedTo = targetId; return c; }
+      return e;
+    });
+    state.linkTarget = null;
+    saveEntries();
+    render();
+  }
+  function exportData() {
+    var blob = new Blob([JSON.stringify(state.entries, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "denik-export-" + todayISO() + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function showToast(msg) {
+    state.toast = msg;
+    render();
+    setTimeout(function () { state.toast = null; render(); }, 2200);
+  }
+
+  function isValidEntry(e) {
+    return e && typeof e === "object"
+      && typeof e.id === "string"
+      && (e.type === "jedlo" || e.type === "symptom" || e.type === "aktivita")
+      && typeof e.date === "string"
+      && typeof e.title === "string";
+  }
+
+  function handleImportFile(file) {
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var parsed;
+      try {
+        parsed = JSON.parse(ev.target.result);
+      } catch (e) {
+        showToast("Súbor sa nedá prečítať — nie je to platný export.");
+        return;
+      }
+      if (!Array.isArray(parsed) || !parsed.every(isValidEntry)) {
+        showToast("Súbor nemá očakávaný formát denníka.");
+        return;
+      }
+      state.pendingImport = parsed;
+      render();
+    };
+    reader.onerror = function () {
+      showToast("Súbor sa nepodarilo načítať.");
+    };
+    reader.readAsText(file);
+  }
+
+  function confirmImportMerge() {
+    var incoming = state.pendingImport;
+    var existingIds = {};
+    state.entries.forEach(function (e) { existingIds[e.id] = true; });
+    var added = 0;
+    incoming.forEach(function (e) {
+      if (!existingIds[e.id]) {
+        state.entries.push(e);
+        added++;
+      }
+    });
+    state.pendingImport = null;
+    saveEntries();
+    render();
+    showToast("Pridaných " + added + " nových záznamov.");
+  }
+
+  function confirmImportReplace() {
+    state.entries = state.pendingImport.slice();
+    state.pendingImport = null;
+    saveEntries();
+    render();
+    showToast("Denník bol nahradený importovanými dátami.");
+  }
+
+  function cancelImport() {
+    state.pendingImport = null;
+    render();
+  }
+
+  function shiftDate(delta) {
+    var d = new Date(state.selectedDate + "T00:00:00");
+    d.setDate(d.getDate() + delta);
+    var tz = d.getTimezoneOffset() * 60000;
+    state.selectedDate = new Date(d - tz).toISOString().slice(0, 10);
+    render();
+  }
+
+  function getDayEntries() {
+    return state.entries
+      .filter(function (e) { return e.date === state.selectedDate; })
+      .sort(function (a, b) { return (a.time || "").localeCompare(b.time || ""); });
+  }
+  function getAvailableDates() {
+    var set = {};
+    state.entries.forEach(function (e) { set[e.date] = true; });
+    set[state.selectedDate] = true;
+    return Object.keys(set).sort().reverse();
+  }
+
+  // ---------- render ----------
+  var app = document.getElementById("app");
+
+  function render() {
+    var dayEntries = getDayEntries();
+    var availableDates = getAvailableDates();
+
+    var html = '';
+    html += '<div class="wrap">';
+
+    html += '<header>';
+    html += '<div><h1 class="serif">Denník</h1><p>Jedlo, symptómy a aktivity na jednom mieste</p></div>';
+    html += '<div class="header-actions">';
+    html += '<button class="export-btn" id="btn-import" title="Importovať dáta">' + iconUpload(16, "#8A8478") + '</button>';
+    html += '<button class="export-btn" id="btn-export" title="Exportovať dáta">' + iconDownload(16, "#8A8478") + '</button>';
+    html += '</div>';
+    html += '<input type="file" id="import-file-input" accept="application/json,.json" style="display:none;" />';
+    html += '</header>';
+
+    if (state.error) {
+      html += '<div class="error-banner">' + esc(state.error) + '</div>';
+    }
+
+    html += '<div class="datenav">';
+    html += '<button id="btn-prev-day">‹</button>';
+    html += '<div class="datenav-center">';
+    html += '<div class="datenav-day serif">' + esc(formatDateHuman(state.selectedDate)) + '</div>';
+    html += '<select id="date-select">';
+    if (availableDates.indexOf(state.selectedDate) === -1) {
+      html += '<option value="' + state.selectedDate + '" selected>' + state.selectedDate + '</option>';
+    }
+    availableDates.forEach(function (d) {
+      var sel = d === state.selectedDate ? ' selected' : '';
+      var label = d === todayISO() ? 'Dnes' : d;
+      html += '<option value="' + d + '"' + sel + '>' + label + '</option>';
+    });
+    html += '</select>';
+    html += '</div>';
+    html += '<button id="btn-next-day">›</button>';
+    html += '</div>';
+
+    if (dayEntries.length === 0) {
+      html += '<div class="empty"><p class="serif">Tento deň je zatiaľ prázdny.</p><p>Pridaj prvý záznam tlačidlom dole.</p></div>';
+    } else {
+      html += '<div class="timeline"><div class="timeline-line"></div>';
+      dayEntries.forEach(function (entry) {
+        html += renderRow(entry);
+      });
+      html += '</div>';
+    }
+
+    html += '</div>';
+
+    html += '<div class="actionbar"><div class="actionbar-inner">';
+    html += '<button class="action-btn" id="btn-add-jedlo" style="background:#F1E9DF;color:#8A6B4F;">' + iconMeal(18, "#8A6B4F") + '<span>Jedlo</span></button>';
+    html += '<button class="action-btn" id="btn-add-symptom" style="background:#F7E4DE;color:#B0472E;">' + iconSymptom(18, "#B0472E") + '<span>Symptóm</span></button>';
+    html += '<button class="action-btn" id="btn-add-aktivita" style="background:#E6EEE9;color:#5C7A6B;">' + iconActivity(18, "#5C7A6B") + '<span>Aktivita</span></button>';
+    html += '</div></div>';
+
+    if (state.modal) {
+      html += renderEntryModal(state.modal);
+    }
+    if (state.linkTarget) {
+      html += renderLinkModal(state.linkTarget);
+    }
+    if (state.pendingImport) {
+      html += renderImportModal(state.pendingImport);
+    }
+    if (state.toast) {
+      html += '<div class="toast">' + esc(state.toast) + '</div>';
+    }
+
+    app.innerHTML = html;
+    attachHandlers();
+  }
+
+  function renderImportModal(incoming) {
+    var h = '<div class="modal-overlay" id="import-modal-overlay">';
+    h += '<div class="modal-sheet">';
+    h += '<div class="modal-header"><span class="modal-title serif">Importovať dáta</span><button class="modal-close" id="import-modal-close">' + iconX(20) + '</button></div>';
+    h += '<p class="import-confirm">Súbor obsahuje ' + incoming.length + ' záznamov. Ako ich chceš pridať?</p>';
+    h += '<div class="import-choice">';
+    h += '<button class="merge" id="import-merge"><span class="opt-title">Zlúčiť s aktuálnym denníkom</span><span class="opt-sub">Pridá len záznamy, ktoré ešte nemáš</span></button>';
+    h += '<button class="replace" id="import-replace"><span class="opt-title">Nahradiť celý denník</span><span class="opt-sub">Vymaže súčasné záznamy a nahradí ich importovanými</span></button>';
+    h += '</div>';
+    h += '</div></div>';
+    return h;
+  }
+
+  function renderRow(entry) {
+    var meta = TYPE_META[entry.type];
+    var isOpen = !!state.openRows[entry.id];
+    var linkedFrom = null;
+    if (entry.type === "symptom" && entry.linkedTo) {
+      linkedFrom = state.entries.find(function (e) { return e.id === entry.linkedTo; });
+    }
+
+    var h = '<div class="row">';
+    h += '<div class="row-dot" style="background:' + meta.bg + ';color:' + meta.color + ';">' + meta.svg(15, meta.color) + '</div>';
+    h += '<div class="row-card" data-row-toggle="' + entry.id + '">';
+    h += '<div class="row-top"><div><span class="row-time">' + esc(entry.time) + '</span><span class="row-cat" style="color:' + meta.color + ';">' + esc(entry.category || meta.label) + '</span></div>';
+    h += '<span class="chevron' + (isOpen ? ' open' : '') + '">' + iconChevron(14, "#C4BDAC") + '</span></div>';
+    h += '<div class="row-title serif">' + esc(entry.title) + '</div>';
+
+    if (entry.type === "symptom" && entry.severity) {
+      var sevLabel = SEVERITY.find(function (s) { return s.v === entry.severity; });
+      h += '<div class="row-sub">Intenzita: ' + esc(sevLabel ? sevLabel.label : '') + '</div>';
+    }
+    if (linkedFrom) {
+      h += '<div class="row-linked">' + iconLink(11) + ' súvisí s: ' + esc(linkedFrom.title) + '</div>';
+    }
+
+    h += '<div class="row-detail' + (isOpen ? ' open' : '') + '">';
+    if (entry.note) {
+      h += '<p class="row-note">' + esc(entry.note) + '</p>';
+    }
+    h += '<div class="row-actions">';
+    if (entry.type === "symptom" && !entry.linkedTo) {
+      h += '<button data-link-btn="' + entry.id + '" style="color:#5C7A6B;">' + iconLink(12) + ' Prepojiť s jedlom/aktivitou</button>';
+    }
+    h += '<button data-delete-btn="' + entry.id + '" style="color:#B0472E;">' + iconTrash(12) + ' Zmazať</button>';
+    h += '</div></div>';
+
+    h += '</div></div>';
+    return h;
+  }
+
+  function renderEntryModal(type) {
+    var meta = TYPE_META[type];
+    var placeholders = { jedlo: "Čo si jedol?", symptom: "Aký symptóm?", aktivita: "Aká aktivita?" };
+    var cats = type === "jedlo" ? MEAL_CATEGORIES : ACTIVITY_TYPES;
+
+    var h = '<div class="modal-overlay" id="entry-modal-overlay">';
+    h += '<form class="modal-sheet" id="entry-form">';
+    h += '<div class="modal-header">';
+    h += '<div class="modal-title-wrap"><div class="modal-icon-badge" style="background:' + meta.bg + ';color:' + meta.color + ';">' + meta.svg(13, meta.color) + '</div>';
+    h += '<span class="modal-title serif">Nový záznam: ' + meta.label + '</span></div>';
+    h += '<button type="button" class="modal-close" id="entry-modal-close">' + iconX(20) + '</button>';
+    h += '</div>';
+
+    h += '<input class="field-title" id="field-title" placeholder="' + placeholders[type] + '" autocomplete="off" />';
+
+    h += '<div class="field-row">';
+    h += '<div class="field-col"><label class="field-label">Čas</label><div class="time-input-wrap">' + iconClock(13, "#A39D8F") + '<input type="time" id="field-time" value="' + nowHM() + '" /></div></div>';
+    if (type === "jedlo" || type === "aktivita") {
+      h += '<div class="field-col wide"><label class="field-label">Kategória</label><select class="field-select" id="field-category">';
+      cats.forEach(function (c) { h += '<option value="' + c + '">' + c + '</option>'; });
+      h += '</select></div>';
+    }
+    h += '</div>';
+
+    if (type === "symptom") {
+      h += '<div style="margin-bottom:14px;"><label class="field-label" style="margin-bottom:6px;">Intenzita</label><div class="severity-row" id="severity-row">';
+      SEVERITY.forEach(function (s, i) {
+        h += '<button type="button" class="severity-btn' + (i === 0 ? ' active' : '') + '" data-severity="' + s.v + '">' + s.label + '</button>';
+      });
+      h += '</div></div>';
+    }
+
+    h += '<textarea class="field-note" id="field-note" placeholder="Poznámka (voliteľné)" rows="2"></textarea>';
+    h += '<button type="submit" class="submit-btn" id="submit-entry" disabled style="background:' + meta.color + ';">Uložiť záznam</button>';
+    h += '</form></div>';
+    return h;
+  }
+
+  function renderLinkModal(linkTargetId) {
+    var linkable = state.entries.filter(function (e) {
+      return e.id !== linkTargetId && (e.type === "jedlo" || e.type === "aktivita");
+    }).sort(function (a, b) { return (a.time || "").localeCompare(b.time || ""); });
+
+    var h = '<div class="modal-overlay" id="link-modal-overlay">';
+    h += '<div class="modal-sheet" style="max-height:70vh;overflow-y:auto;">';
+    h += '<div class="modal-header"><span class="modal-title serif">Prepojiť s...</span><button class="modal-close" id="link-modal-close">' + iconX(20) + '</button></div>';
+    if (linkable.length === 0) {
+      h += '<p style="font-size:13px;color:#A39D8F;">V tento deň zatiaľ nemáš žiadne jedlo ani aktivitu na prepojenie.</p>';
+    } else {
+      linkable.forEach(function (e) {
+        var meta = TYPE_META[e.type];
+        h += '<button class="link-list-item" data-link-select="' + e.id + '">';
+        h += '<div class="link-list-icon" style="background:' + meta.bg + ';color:' + meta.color + ';">' + meta.svg(13, meta.color) + '</div>';
+        h += '<div><div class="link-list-time">' + esc(e.time) + '</div><div class="link-list-title">' + esc(e.title) + '</div></div>';
+        h += '</button>';
+      });
+    }
+    h += '</div></div>';
+    return h;
+  }
+
+  // ---------- event wiring ----------
+  function attachHandlers() {
+    var exportBtn = document.getElementById("btn-export");
+    if (exportBtn) exportBtn.onclick = exportData;
+
+    var importBtn = document.getElementById("btn-import");
+    var importInput = document.getElementById("import-file-input");
+    if (importBtn && importInput) {
+      importBtn.onclick = function () { importInput.click(); };
+      importInput.onchange = function (e) {
+        var file = e.target.files && e.target.files[0];
+        if (file) handleImportFile(file);
+        importInput.value = "";
+      };
+    }
+
+    var importOverlay = document.getElementById("import-modal-overlay");
+    if (importOverlay) {
+      importOverlay.addEventListener("click", function (ev) {
+        if (ev.target === importOverlay) cancelImport();
+      });
+      var importClose = document.getElementById("import-modal-close");
+      if (importClose) importClose.onclick = cancelImport;
+      var mergeBtn = document.getElementById("import-merge");
+      if (mergeBtn) mergeBtn.onclick = confirmImportMerge;
+      var replaceBtn = document.getElementById("import-replace");
+      if (replaceBtn) replaceBtn.onclick = confirmImportReplace;
+    }
+
+    var prevBtn = document.getElementById("btn-prev-day");
+    if (prevBtn) prevBtn.onclick = function () { shiftDate(-1); };
+    var nextBtn = document.getElementById("btn-next-day");
+    if (nextBtn) nextBtn.onclick = function () { shiftDate(1); };
+    var dateSelect = document.getElementById("date-select");
+    if (dateSelect) dateSelect.onchange = function (e) { state.selectedDate = e.target.value; render(); };
+
+    var addJedlo = document.getElementById("btn-add-jedlo");
+    if (addJedlo) addJedlo.onclick = function () { state.modal = "jedlo"; render(); focusModalTitle(); };
+    var addSymptom = document.getElementById("btn-add-symptom");
+    if (addSymptom) addSymptom.onclick = function () { state.modal = "symptom"; render(); focusModalTitle(); };
+    var addAktivita = document.getElementById("btn-add-aktivita");
+    if (addAktivita) addAktivita.onclick = function () { state.modal = "aktivita"; render(); focusModalTitle(); };
+
+    document.querySelectorAll("[data-row-toggle]").forEach(function (el) {
+      el.addEventListener("click", function (ev) {
+        if (ev.target.closest("[data-link-btn]") || ev.target.closest("[data-delete-btn]")) return;
+        var id = el.getAttribute("data-row-toggle");
+        state.openRows[id] = !state.openRows[id];
+        render();
+      });
+    });
+    document.querySelectorAll("[data-delete-btn]").forEach(function (el) {
+      el.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        deleteEntry(el.getAttribute("data-delete-btn"));
+      });
+    });
+    document.querySelectorAll("[data-link-btn]").forEach(function (el) {
+      el.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        state.linkTarget = el.getAttribute("data-link-btn");
+        render();
+      });
+    });
+
+    var overlay = document.getElementById("entry-modal-overlay");
+    if (overlay) {
+      overlay.addEventListener("click", function (ev) {
+        if (ev.target === overlay) { state.modal = null; render(); }
+      });
+      var closeBtn = document.getElementById("entry-modal-close");
+      if (closeBtn) closeBtn.onclick = function () { state.modal = null; render(); };
+
+      var titleInput = document.getElementById("field-title");
+      var submitBtn = document.getElementById("submit-entry");
+      function refreshSubmitState() {
+        submitBtn.disabled = !titleInput.value.trim();
+      }
+      titleInput.addEventListener("input", refreshSubmitState);
+
+      var severityRow = document.getElementById("severity-row");
+      var selectedSeverity = 1;
+      if (severityRow) {
+        severityRow.querySelectorAll("[data-severity]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            selectedSeverity = parseInt(btn.getAttribute("data-severity"), 10);
+            severityRow.querySelectorAll("[data-severity]").forEach(function (b) { b.classList.remove("active"); });
+            btn.classList.add("active");
+          });
+        });
+      }
+
+      var form = document.getElementById("entry-form");
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var title = titleInput.value.trim();
+        if (!title) return;
+        var time = document.getElementById("field-time").value || nowHM();
+        var note = document.getElementById("field-note").value.trim();
+        var data = { type: state.modal, title: title, time: time };
+        if (note) data.note = note;
+        var catEl = document.getElementById("field-category");
+        if (catEl) data.category = catEl.value;
+        if (state.modal === "symptom") data.severity = selectedSeverity;
+        state.modal = null;
+        addEntry(data);
+      });
+    }
+
+    var linkOverlay = document.getElementById("link-modal-overlay");
+    if (linkOverlay) {
+      linkOverlay.addEventListener("click", function (ev) {
+        if (ev.target === linkOverlay) { state.linkTarget = null; render(); }
+      });
+      var linkClose = document.getElementById("link-modal-close");
+      if (linkClose) linkClose.onclick = function () { state.linkTarget = null; render(); };
+      linkOverlay.querySelectorAll("[data-link-select]").forEach(function (el) {
+        el.addEventListener("click", function () {
+          linkSymptomTo(state.linkTarget, el.getAttribute("data-link-select"));
+        });
+      });
+    }
+  }
+
+  function focusModalTitle() {
+    setTimeout(function () {
+      var el = document.getElementById("field-title");
+      if (el) el.focus();
+    }, 0);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
