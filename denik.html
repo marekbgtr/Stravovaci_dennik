@@ -955,7 +955,21 @@
   // window and triggers print there. This sidesteps a Samsung Internet issue
   // where content injected into the current page via innerHTML right before
   // window.print() sometimes doesn't make it into the print preview.
+  // Detects whether the app is running as an installed standalone PWA
+  // (added to home screen) rather than inside a normal browser tab.
+  function isStandalonePWA() {
+    return window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+  }
+
   function openPrintWindow(days) {
+    // window.open("_blank") has no browser chrome to open a new tab/window
+    // into when running as an installed standalone PWA, and can crash the
+    // app on some Android versions. In that case, print in-place instead.
+    if (isStandalonePWA()) {
+      printInPage(days);
+      return;
+    }
+
     var bodyHTML = buildPrintHTML(days);
     var doc = '<!DOCTYPE html><html lang="sk"><head><meta charset="UTF-8">' +
       '<title>Denník — export na tlač</title><style>' +
@@ -974,14 +988,46 @@
       '<script>window.onload = function () { window.print(); };<\/script>' +
       '</body></html>';
 
-    var printWin = window.open("", "_blank");
+    var printWin = null;
+    try { printWin = window.open("", "_blank"); } catch (e) { printWin = null; }
     if (!printWin) {
-      showToast("Prehliadač zablokoval otvorenie okna na tlač — povoľ vyskakovacie okná pre túto stránku.");
+      // Fall back to in-page printing instead of just failing — covers both
+      // popup-blocked browsers and any other environment without window.open.
+      printInPage(days);
       return;
     }
     printWin.document.open();
     printWin.document.write(doc);
     printWin.document.close();
+  }
+
+  // In-page print fallback: fills the hidden #print-area with the export
+  // content and calls window.print() on the current page. Used for installed
+  // standalone PWAs (no window.open target available) and as a safety net
+  // if opening a new window/tab fails for any other reason.
+  function printInPage(days) {
+    var pa = document.getElementById("print-area");
+    if (!pa) return;
+    pa.innerHTML = buildPrintHTML(days);
+    pa.classList.add("active");
+
+    function cleanup() {
+      pa.classList.remove("active");
+      pa.innerHTML = "";
+      window.removeEventListener("afterprint", cleanup);
+    }
+    window.addEventListener("afterprint", cleanup);
+
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        try {
+          window.print();
+        } catch (e) {
+          showToast("Tlač sa nepodarila spustiť v tomto zobrazení appky.");
+        }
+        setTimeout(cleanup, 3000); // fallback in case afterprint never fires
+      });
+    });
   }
 
   // Builds a plain-text, chronological export intended to be pasted into an
