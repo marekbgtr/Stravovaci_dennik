@@ -215,7 +215,7 @@
   // Bump this string with each meaningful change, so it's easy to confirm
   // on-device whether the latest version has actually been uploaded/loaded.
   // Shown small in the header, and included in print/AI export headers too.
-  var APP_VERSION = "1.4.3 (2026-09-11)";
+  var APP_VERSION = "1.5.0 (2026-09-11)";
 
   // ---------- config: category lists (mutable — user can extend) ----------
   var DEFAULT_CATEGORIES = {
@@ -302,7 +302,10 @@
     pendingImport: null,
     toast: null,
     printModalOpen: false,
-    printRange: 7, // days back to include in print export
+    printRange: 7, // days back to include (used when printRangeMode === "preset")
+    printRangeMode: "preset", // "preset" | "custom"
+    printCustomFrom: null,
+    printCustomTo: null,
     aiExportModalOpen: false,
     aiExportRange: 30
   };
@@ -896,11 +899,25 @@
     h += '<div class="modal-header"><div class="modal-title-wrap"><div class="modal-icon-badge" style="background:#EFEAE0;color:#5A5548;">' + iconPrinter(13, "#5A5548") + '</div><span class="modal-title serif">Export na tlač</span></div>';
     h += '<button class="modal-close" id="print-modal-close">' + iconX(20) + '</button></div>';
     h += '<p style="font-size:13px;color:#5A5548;line-height:1.5;margin:0 0 14px;">Vyber obdobie a spôsob exportu. Ak appku používaš nainštalovanú (z plochy), zvoľ „Zdieľať / stiahnuť" — priame otvorenie tlače môže v tomto zobrazení appky zlyhať.</p>';
-    h += '<div class="range-tabs" id="print-range-tabs" style="margin-bottom:18px;">';
+
+    var isCustom = state.printRangeMode === "custom";
+    h += '<div class="range-tabs" id="print-range-tabs" style="margin-bottom:14px;">';
     [7, 14, 30].forEach(function (r) {
-      h += '<button data-print-range="' + r + '" class="' + (state.printRange === r ? "active" : "") + '">' + r + ' dní</button>';
+      var active = !isCustom && state.printRange === r;
+      h += '<button data-print-range="' + r + '" class="' + (active ? "active" : "") + '">' + r + ' dní</button>';
     });
+    h += '<button data-print-range="custom" class="' + (isCustom ? "active" : "") + '">Vlastné obdobie</button>';
     h += '</div>';
+
+    if (isCustom) {
+      var fromVal = state.printCustomFrom || daysAgoISO(6);
+      var toVal = state.printCustomTo || todayISO();
+      h += '<div class="field-row" style="margin-bottom:18px;">';
+      h += '<div class="field-col"><label class="field-label">Od</label><input type="date" id="print-custom-from" class="field-input" value="' + esc(fromVal) + '" max="' + esc(todayISO()) + '" /></div>';
+      h += '<div class="field-col"><label class="field-label">Do</label><input type="date" id="print-custom-to" class="field-input" value="' + esc(toVal) + '" max="' + esc(todayISO()) + '" /></div>';
+      h += '</div>';
+    }
+
     h += '<div style="display:flex;flex-direction:column;gap:8px;">';
     h += '<button type="button" class="submit-btn" id="submit-print-window" style="background:#2B2B26;">Otvoriť na tlač (nové okno)</button>';
     h += '<button type="button" class="copy-btn-secondary" id="submit-print-share">Zdieľať / stiahnuť súbor</button>';
@@ -909,15 +926,28 @@
     return h;
   }
 
-  function buildPrintHTML(days) {
-    var fromDate = daysAgoISO(days - 1);
+  // Resolves the current print-range UI selection into a concrete
+  // { from, to } date range, whichever mode (preset days-back vs custom
+  // from/to) is active.
+  function resolvePrintRange() {
+    if (state.printRangeMode === "custom") {
+      var from = state.printCustomFrom || daysAgoISO(6);
+      var to = state.printCustomTo || todayISO();
+      // guard against an inverted range (from after to) by swapping
+      if (from > to) { var tmp = from; from = to; to = tmp; }
+      return { from: from, to: to };
+    }
+    return { from: daysAgoISO(state.printRange - 1), to: todayISO() };
+  }
+
+  function buildPrintHTML(fromDate, toDate) {
     var relevantDates = {};
-    state.entries.forEach(function (e) { if (e.date >= fromDate) relevantDates[e.date] = true; });
-    Object.keys(state.weights).forEach(function (d) { if (d >= fromDate) relevantDates[d] = true; });
+    state.entries.forEach(function (e) { if (e.date >= fromDate && e.date <= toDate) relevantDates[e.date] = true; });
+    Object.keys(state.weights).forEach(function (d) { if (d >= fromDate && d <= toDate) relevantDates[d] = true; });
     var sortedDates = Object.keys(relevantDates).sort().reverse();
 
     var html = '<h1>Denník — prehľad</h1>';
-    html += '<div class="print-meta">Obdobie: ' + esc(fromDate) + ' – ' + esc(todayISO()) + ' · vygenerované ' + esc(todayISO()) + '</div>';
+    html += '<div class="print-meta">Obdobie: ' + esc(fromDate) + ' – ' + esc(toDate) + ' · vygenerované ' + esc(todayISO()) + '</div>';
 
     if (sortedDates.length === 0) {
       html += '<p>V tomto období nie sú žiadne záznamy.</p>';
@@ -980,25 +1010,25 @@
     return byMediaQuery || byMediaQueryFullscreen || byMediaQueryMinimalUi || byNavigatorStandalone || byReferrer;
   }
 
-  function openPrintWindow(days) {
+  function openPrintWindow(range) {
     // window.open("_blank") has no browser chrome to open a new tab/window
     // into when running as an installed standalone PWA. Worse, window.print()
     // itself has been observed to freeze/crash the WebView in that mode (no
     // host for the native print dialog), so we avoid calling it at all here —
     // share/download the content instead.
     if (isStandalonePWA()) {
-      offerPrintContentForStandalone(days);
+      offerPrintContentForStandalone(range);
       return;
     }
 
-    var doc = buildFullPrintDocument(days, true);
+    var doc = buildFullPrintDocument(range, true);
 
     var printWin = null;
     try { printWin = window.open("", "_blank"); } catch (e) { printWin = null; }
     if (!printWin) {
       // Popup blocked or window.open unavailable for some other reason —
       // fall back to the safe share/download path rather than failing silently.
-      offerPrintContentForStandalone(days);
+      offerPrintContentForStandalone(range);
       return;
     }
     printWin.document.open();
@@ -1007,14 +1037,15 @@
   }
 
   // Builds a complete, standalone HTML document containing the print export.
+  // range is { from: "YYYY-MM-DD", to: "YYYY-MM-DD" }.
   // autoPrint=true injects a script that calls window.print() on load — used
   // for the new-window path in a normal browser. autoPrint=false omits it —
   // used when the document is shared/downloaded as a file to be opened later
   // (e.g. in the installed standalone app, where we never call window.print()
   // ourselves), so the person opens it in their own time in a real browser
   // and can print, save as PDF, or email it from there.
-  function buildFullPrintDocument(days, autoPrint) {
-    var bodyHTML = buildPrintHTML(days);
+  function buildFullPrintDocument(range, autoPrint) {
+    var bodyHTML = buildPrintHTML(range.from, range.to);
     var doc = '<!DOCTYPE html><html lang="sk"><head><meta charset="UTF-8">' +
       '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
       '<title>Denník — export na tlač</title><style>' +
@@ -1046,9 +1077,9 @@
   // window.print() at all in this mode, offer the content for sharing (Web
   // Share API, which hands off to whatever app the user picks — including a
   // print service if one is installed) or, failing that, download as a file.
-  function offerPrintContentForStandalone(days) {
-    var htmlDoc = buildFullPrintDocument(days, false);
-    var fileName = "denik-export-" + todayISO() + ".html";
+  function offerPrintContentForStandalone(range) {
+    var htmlDoc = buildFullPrintDocument(range, false);
+    var fileName = "denik-export-" + range.from + "_" + range.to + ".html";
 
     if (navigator.share) {
       var file;
@@ -1485,26 +1516,49 @@
 
       document.querySelectorAll("[data-print-range]").forEach(function (btn) {
         btn.addEventListener("click", function () {
-          state.printRange = parseInt(btn.getAttribute("data-print-range"), 10);
+          var val = btn.getAttribute("data-print-range");
+          if (val === "custom") {
+            state.printRangeMode = "custom";
+            if (!state.printCustomFrom) state.printCustomFrom = daysAgoISO(6);
+            if (!state.printCustomTo) state.printCustomTo = todayISO();
+          } else {
+            state.printRangeMode = "preset";
+            state.printRange = parseInt(val, 10);
+          }
           render();
         });
       });
 
+      var printCustomFromInput = document.getElementById("print-custom-from");
+      if (printCustomFromInput) {
+        printCustomFromInput.addEventListener("change", function () {
+          state.printCustomFrom = printCustomFromInput.value;
+        });
+      }
+      var printCustomToInput = document.getElementById("print-custom-to");
+      if (printCustomToInput) {
+        printCustomToInput.addEventListener("change", function () {
+          state.printCustomTo = printCustomToInput.value;
+        });
+      }
+
       var submitPrintWindow = document.getElementById("submit-print-window");
       if (submitPrintWindow) {
         submitPrintWindow.onclick = function () {
+          var range = resolvePrintRange();
           state.printModalOpen = false;
           render();
-          openPrintWindow(state.printRange);
+          openPrintWindow(range);
         };
       }
 
       var submitPrintShare = document.getElementById("submit-print-share");
       if (submitPrintShare) {
         submitPrintShare.onclick = function () {
+          var range = resolvePrintRange();
           state.printModalOpen = false;
           render();
-          offerPrintContentForStandalone(state.printRange);
+          offerPrintContentForStandalone(range);
         };
       }
     }
