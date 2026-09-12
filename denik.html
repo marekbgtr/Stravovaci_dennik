@@ -108,7 +108,7 @@
 
   .chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
   .chip-btn { padding: 7px 12px; border-radius: 20px; border: 1px solid #E3DDD0; background: transparent; color: #8A8478; font-size: 13px; }
-  .chip-btn.active { border-color: currentColor; font-weight: 600; }
+  .chip-btn.active { border-width: 1.5px; border-color: currentColor; font-weight: 600; }
 
   .severity-row { display: flex; gap: 8px; }
   .severity-btn { flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid #E3DDD0; background: transparent; color: #8A8478; font-size: 13px; }
@@ -323,7 +323,7 @@
   // Bump this string with each meaningful change, so it's easy to confirm
   // on-device whether the latest version has actually been uploaded/loaded.
   // Shown small in the header, and included in print/AI export headers too.
-  var APP_VERSION = "1.7.0 (2026-09-12)";
+  var APP_VERSION = "1.7.1 (2026-09-12)";
 
   // ---------- config: category lists (mutable — user can extend) ----------
   var DEFAULT_CATEGORIES = {
@@ -1529,7 +1529,9 @@
       var curToilet = isEdit ? editEntry.subtype : "mocenie";
       h += '<div style="margin-bottom:14px;"><label class="field-label" style="margin-bottom:6px;">Typ</label><div class="chip-row" id="toilet-type-row">';
       TOILET_TYPES.forEach(function (t) {
-        h += '<button type="button" class="chip-btn' + (t.v === curToilet ? ' active' : '') + '" data-toilet-type="' + t.v + '" style="color:#A3792F;">' + t.label + '</button>';
+        var isActive = t.v === curToilet;
+        var chipStyle = "color:#A3792F;" + (isActive ? "background:" + TYPE_META.vylucovanie.bg + ";" : "");
+        h += '<button type="button" class="chip-btn' + (isActive ? ' active' : '') + '" data-toilet-type="' + t.v + '" style="' + chipStyle + '">' + t.label + '</button>';
       });
       h += '</div></div>';
       h += '<div id="bristol-wrap" style="margin-bottom:14px;display:' + (curToilet === "stolica" ? "block" : "none") + ';"><label class="field-label" style="margin-bottom:6px;">Bristolova škála (tvar stolice)</label><div class="bristol-grid" id="bristol-grid">';
@@ -1549,7 +1551,8 @@
       cats.forEach(function (c, i) {
         var isActive = isEdit ? (c === curCategory) : (i === 0);
         if (curCategoryIsCustom && c === "Iné") isActive = true;
-        h += '<button type="button" class="chip-btn' + (isActive ? ' active' : '') + '" data-category="' + esc(c) + '" style="color:' + meta.color + ';">' + esc(c) + '</button>';
+        var chipStyle = "color:" + meta.color + ";" + (isActive ? "background:" + meta.bg + ";" : "");
+        h += '<button type="button" class="chip-btn' + (isActive ? ' active' : '') + '" data-category="' + esc(c) + '" style="' + chipStyle + '">' + esc(c) + '</button>';
       });
       h += '</div></div>';
       var customVal = curCategoryIsCustom ? esc(curCategory) : "";
@@ -2057,8 +2060,9 @@
         toiletRow.querySelectorAll("[data-toilet-type]").forEach(function (btn) {
           btn.addEventListener("click", function () {
             selectedToiletType = btn.getAttribute("data-toilet-type");
-            toiletRow.querySelectorAll("[data-toilet-type]").forEach(function (b) { b.classList.remove("active"); });
+            toiletRow.querySelectorAll("[data-toilet-type]").forEach(function (b) { b.classList.remove("active"); b.style.background = ""; });
             btn.classList.add("active");
+            btn.style.background = TYPE_META.vylucovanie.bg;
             updateBristolVisibility();
           });
         });
@@ -2093,8 +2097,9 @@
         chipButtons.forEach(function (btn) {
           btn.addEventListener("click", function () {
             var val = btn.getAttribute("data-category");
-            chipButtons.forEach(function (b) { b.classList.remove("active"); });
+            chipButtons.forEach(function (b) { b.classList.remove("active"); b.style.background = ""; });
             btn.classList.add("active");
+            btn.style.background = TYPE_META[type].bg;
             if (val === "Iné") {
               selectedCategory = null;
               customCategoryInput.style.display = "block";
