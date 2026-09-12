@@ -186,6 +186,16 @@
   .suggest-row { display: flex; gap: 8px; flex-wrap: wrap; margin: -8px 0 14px; }
   .suggest-chip { padding: 6px 12px; border-radius: 16px; border: 1px solid #E3DDD0; background: #F7F5F0; color: #5A5548; font-size: 12px; }
 
+  .symptom-dropdown-wrap { position: relative; margin-bottom: 14px; }
+  .symptom-dropdown-list { position: absolute; top: 100%; left: 0; right: 0; background: #FCFBF8; border: 1px solid #E3DDD0; border-top: none; border-radius: 0 0 10px 10px; max-height: 180px; overflow-y: auto; z-index: 5; box-shadow: 0 4px 10px rgba(43,43,38,0.08); }
+  .symptom-dropdown-item { width: 100%; text-align: left; padding: 10px 14px; border: none; background: transparent; font-size: 14px; color: #2B2B26; border-bottom: 1px solid #F0EBE0; display: flex; justify-content: space-between; align-items: center; }
+  .symptom-dropdown-item:last-child { border-bottom: none; }
+  .symptom-dropdown-item .count-badge { font-size: 11px; color: #A39D8F; }
+  .symptom-dropdown-add { width: 100%; text-align: left; padding: 10px 14px; border: none; background: transparent; font-size: 14px; color: #B0472E; font-weight: 600; }
+  .symptom-similar-warning { background: #FBF3EC; border: 1px solid #E8D5BE; border-radius: 8px; padding: 10px 12px; margin: -6px 0 14px; }
+  .symptom-similar-warning p { font-size: 12px; color: #8A6B4F; margin: 0 0 8px; line-height: 1.4; }
+  .symptom-similar-item { display: inline-block; padding: 5px 10px; border-radius: 14px; border: 1px solid #D9C4A8; background: #FCFBF8; color: #5A5548; font-size: 12px; margin: 0 6px 6px 0; }
+
   /* Print export */
   @media print {
     body * { visibility: hidden; }
@@ -203,6 +213,104 @@
   #print-area .print-row .p-type { width: 78px; flex-shrink: 0; font-weight: 600; }
   #print-area .print-row .p-body { flex: 1; }
   #print-area .print-row .p-note { color: #666; font-style: italic; }
+
+  /* ============ DARK THEME ============
+     Overrides neutral surface/text/border colors only. Type-accent colors
+     (food brown, symptom red, activity green, etc.) are left unchanged —
+     they read fine against a dark background without adjustment. */
+  html[data-theme="dark"] { color-scheme: dark; }
+  html[data-theme="dark"], html[data-theme="dark"] body { background: #171511; }
+  html[data-theme="dark"] body { color: #EDE9E2; }
+  html[data-theme="dark"] #app { background: #171511; }
+  html[data-theme="dark"] ::selection { background: #4A3F2E; }
+
+  html[data-theme="dark"] header p { color: #9B948A; }
+  html[data-theme="dark"] .icon-btn { border-color: #3A362F; color: #9B948A; }
+
+  html[data-theme="dark"] .import-confirm { color: #C9C3B8; }
+  html[data-theme="dark"] .import-choice button { border-color: #3A362F; }
+  html[data-theme="dark"] .import-choice button .opt-sub { color: #9B948A; }
+  html[data-theme="dark"] .toast { background: #EDE9E2; color: #171511; }
+
+  html[data-theme="dark"] .datenav select,
+  html[data-theme="dark"] .datenav-center .datenav-day { color: #EDE9E2; }
+  html[data-theme="dark"] .datenav select { color: #9B948A; }
+
+  html[data-theme="dark"] .error-banner { background: #3A241C; color: #E8A491; }
+
+  html[data-theme="dark"] .empty { color: #9B948A; }
+
+  html[data-theme="dark"] .timeline-line { background: #3A362F; }
+  html[data-theme="dark"] .row-dot { border-color: #171511; }
+  html[data-theme="dark"] .row-card { background: #221F1A; border-color: #3A362F; }
+  html[data-theme="dark"] .row-time,
+  html[data-theme="dark"] .row-sub,
+  html[data-theme="dark"] .row-linked { color: #9B948A; }
+  html[data-theme="dark"] .row-detail { border-color: #3A362F; }
+  html[data-theme="dark"] .row-note { color: #C9C3B8; }
+  html[data-theme="dark"] .chevron svg { stroke: #6B655A; }
+
+  html[data-theme="dark"] .actionbar { background: #1D1B16; border-color: #3A362F; }
+  html[data-theme="dark"] .fab-add { background: #EDE9E2; color: #171511; }
+
+  html[data-theme="dark"] .modal-overlay { background: rgba(0,0,0,0.6); }
+  html[data-theme="dark"] .modal-sheet { background: #1D1B16; }
+  html[data-theme="dark"] .modal-close { color: #9B948A; }
+
+  html[data-theme="dark"] .field-title,
+  html[data-theme="dark"] .field-select,
+  html[data-theme="dark"] .field-input,
+  html[data-theme="dark"] .field-note,
+  html[data-theme="dark"] .time-input-wrap input { color: #EDE9E2; }
+  html[data-theme="dark"] .field-title { border-color: #3A362F; }
+  html[data-theme="dark"] .field-label { color: #9B948A; }
+  html[data-theme="dark"] .time-input-wrap,
+  html[data-theme="dark"] .field-select,
+  html[data-theme="dark"] .field-input,
+  html[data-theme="dark"] .field-note { border-color: #3A362F; }
+  html[data-theme="dark"] .field-hint { color: #9B948A; }
+
+  html[data-theme="dark"] .chip-btn { border-color: #3A362F; color: #9B948A; }
+  html[data-theme="dark"] .severity-btn { border-color: #3A362F; color: #9B948A; }
+  html[data-theme="dark"] .bristol-btn { border-color: #3A362F; color: #C9C3B8; }
+
+  html[data-theme="dark"] .submit-btn:disabled { background: #3A362F !important; color: #6B655A; }
+
+  html[data-theme="dark"] .link-list-item { border-color: #2A2721; }
+
+  html[data-theme="dark"] .tabnav { background: #221F1A; }
+  html[data-theme="dark"] .tabnav button { color: #9B948A; }
+  html[data-theme="dark"] .tabnav button.active { background: #1D1B16; color: #EDE9E2; }
+
+  html[data-theme="dark"] .weight-card { background: #221F1A; border-color: #3A362F; }
+  html[data-theme="dark"] .weight-label { color: #9B948A; }
+
+  html[data-theme="dark"] .stat-empty { color: #9B948A; }
+  html[data-theme="dark"] .range-tabs button { border-color: #3A362F; color: #9B948A; }
+  html[data-theme="dark"] .range-tabs button.active { background: #EDE9E2; color: #171511; border-color: #EDE9E2; }
+  html[data-theme="dark"] .chart-wrap { background: #221F1A; border-color: #3A362F; }
+  html[data-theme="dark"] .link-stat-item { background: #221F1A; border-color: #3A362F; }
+  html[data-theme="dark"] .link-stat-count { color: #9B948A; }
+  html[data-theme="dark"] .link-stat-food-name { color: #C9C3B8; }
+  html[data-theme="dark"] .link-stat-bar-wrap { background: #3A362F; }
+  html[data-theme="dark"] .link-stat-food-count { color: #9B948A; }
+  html[data-theme="dark"] .freq-bar-label { color: #9B948A; }
+  html[data-theme="dark"] .freq-bar-track { background: #3A362F; }
+  html[data-theme="dark"] .freq-bar-count { color: #9B948A; }
+  html[data-theme="dark"] .summary-tile { background: #221F1A; border-color: #3A362F; }
+  html[data-theme="dark"] .summary-tile-label { color: #9B948A; }
+
+  html[data-theme="dark"] .ai-export-textarea { background: #221F1A; border-color: #3A362F; color: #EDE9E2; }
+  html[data-theme="dark"] .copy-btn-secondary { background: #2A2721; color: #C9C3B8; }
+
+  html[data-theme="dark"] .suggest-chip { background: #221F1A; border-color: #3A362F; color: #C9C3B8; }
+
+  html[data-theme="dark"] .symptom-dropdown-list { background: #1D1B16; border-color: #3A362F; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+  html[data-theme="dark"] .symptom-dropdown-item { color: #EDE9E2; border-color: #2A2721; }
+  html[data-theme="dark"] .symptom-dropdown-item .count-badge { color: #9B948A; }
+  html[data-theme="dark"] .symptom-similar-warning { background: #2A2419; border-color: #4A3F2E; }
+  html[data-theme="dark"] .symptom-similar-warning p { color: #D4B896; }
+  html[data-theme="dark"] .symptom-similar-item { background: #221F1A; border-color: #4A3F2E; color: #C9C3B8; }
 </style>
 </head>
 <body>
@@ -215,7 +323,7 @@
   // Bump this string with each meaningful change, so it's easy to confirm
   // on-device whether the latest version has actually been uploaded/loaded.
   // Shown small in the header, and included in print/AI export headers too.
-  var APP_VERSION = "1.5.0 (2026-09-11)";
+  var APP_VERSION = "1.7.0 (2026-09-12)";
 
   // ---------- config: category lists (mutable — user can extend) ----------
   var DEFAULT_CATEGORIES = {
@@ -245,6 +353,7 @@
   var STORAGE_KEY = "denik_entries_v1";
   var CATEGORIES_KEY = "denik_categories_v1";
   var WEIGHT_KEY = "denik_weight_v1"; // { "YYYY-MM-DD": kg, ... }
+  var THEME_KEY = "denik_theme_v1"; // "light" | "dark"
 
   // ---------- icons ----------
   function svgWrap(inner, size, color, sw) {
@@ -269,6 +378,8 @@
   function iconEdit(size, color) { return svgWrap('<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>', size, color); }
   function iconWeight(size, color) { return svgWrap('<rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M12 13.5 L15 9.5"/><circle cx="12" cy="13.5" r="1"/>', size, color); }
   function iconStats(size, color) { return svgWrap('<line x1="4" y1="20" x2="4" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="20" y1="20" x2="20" y2="14"/>', size, color); }
+  function iconSun(size, color) { return svgWrap('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>', size, color); }
+  function iconMoon(size, color) { return svgWrap('<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>', size, color); }
   function iconCopy(size, color) { return svgWrap('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>', size, color); }
   function iconPrinter(size, color) { return svgWrap('<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>', size, color); }
   function iconSparkles(size, color) { return svgWrap('<path d="M12 3v4M12 17v4M5 5l2.5 2.5M16.5 16.5L19 19M3 12h4M17 12h4M5 19l2.5-2.5M16.5 7.5L19 5"/><circle cx="12" cy="12" r="2"/>', size, color); }
@@ -306,6 +417,7 @@
     printRangeMode: "preset", // "preset" | "custom"
     printCustomFrom: null,
     printCustomTo: null,
+    theme: loadTheme(),
     aiExportModalOpen: false,
     aiExportRange: 30
   };
@@ -352,6 +464,32 @@
       saveCategories();
     }
   }
+  function loadTheme() {
+    try {
+      var stored = localStorage.getItem(THEME_KEY);
+      if (stored === "dark" || stored === "light") return stored;
+    } catch (e) { /* fall through to system preference */ }
+    // No stored preference yet: default to the system's color-scheme setting.
+    try {
+      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) return "dark";
+    } catch (e) { /* ignore */ }
+    return "light";
+  }
+  function saveTheme(theme) {
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* non-critical */ }
+  }
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    var themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) themeColorMeta.setAttribute("content", theme === "dark" ? "#1E1C18" : "#F7F5F0");
+  }
+  function toggleTheme() {
+    state.theme = state.theme === "dark" ? "light" : "dark";
+    saveTheme(state.theme);
+    applyTheme(state.theme);
+    render();
+  }
+
   function loadWeights() {
     try { var raw = localStorage.getItem(WEIGHT_KEY); return raw ? JSON.parse(raw) : {}; }
     catch (e) { return {}; }
@@ -408,6 +546,67 @@
       return b.lastSort < a.lastSort ? -1 : 1;
     });
     return list.slice(0, limit).map(function (x) { return x.label; });
+  }
+
+  // Returns every distinct title ever used for a given type, sorted by
+  // frequency (most-used first). Used to power the searchable symptom
+  // "database" dropdown — unlike getTitleSuggestions this has no limit,
+  // since the whole point is to let the person browse/search everything
+  // they've ever recorded, not just the top few.
+  function getAllDistinctTitles(type) {
+    var relevant = state.entries.filter(function (e) { return e.type === type && e.title; });
+    var stats = {};
+    relevant.forEach(function (e) {
+      var key = e.title.trim().toLowerCase();
+      if (!key) return;
+      if (!stats[key]) stats[key] = { label: e.title.trim(), count: 0 };
+      stats[key].count++;
+    });
+    var list = Object.keys(stats).map(function (k) { return stats[k]; });
+    list.sort(function (a, b) { return b.count - a.count; });
+    return list.map(function (x) { return x.label; });
+  }
+
+  // Slovak stopwords excluded when comparing titles for similarity — common
+  // short words like prepositions/pronouns that would otherwise cause
+  // unrelated symptoms to look similar just because they share "v", "na", etc.
+  var SIMILARITY_STOPWORDS = ["v", "na", "s", "so", "a", "aj", "je", "som", "mi", "mu", "jej",
+    "pri", "po", "za", "do", "od", "pre", "bez", "cez", "pod", "nad", "medzi", "ako", "ale", "alebo", "to", "ten", "tá", "tie"];
+
+  // Breaks a title into lowercase word "tokens" for similarity comparison,
+  // stripping punctuation and short stopwords. Deliberately simple (no
+  // stemming/fuzzy matching) so behavior stays predictable and explainable.
+  function tokenizeForSimilarity(text) {
+    return text
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, function (m) { return m; }) // keep diacritics as-is; normalize is a no-op safeguard here
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .split(/\s+/)
+      .filter(function (w) { return w.length >= 3 && SIMILARITY_STOPWORDS.indexOf(w) === -1; });
+  }
+
+  // Finds existing titles (for the given type) that share at least one
+  // meaningful word with newTitle — e.g. "pichanie v podrebrí vpravo" and
+  // "pichanie v pravom podrebrí" both contain "pichanie" and "podrebrí".
+  // Returns matches sorted by number of shared words (most overlap first),
+  // excluding an exact case-insensitive match (that's not "similar", it's
+  // the same thing) and excluding newTitle itself if already in the list.
+  function findSimilarTitles(newTitle, type, limit) {
+    limit = limit || 5;
+    var newTokens = tokenizeForSimilarity(newTitle);
+    if (newTokens.length === 0) return [];
+    var newKey = newTitle.trim().toLowerCase();
+
+    var existing = getAllDistinctTitles(type);
+    var scored = [];
+    existing.forEach(function (title) {
+      if (title.trim().toLowerCase() === newKey) return; // exact match isn't "similar", handled separately
+      var tokens = tokenizeForSimilarity(title);
+      var shared = tokens.filter(function (t) { return newTokens.indexOf(t) !== -1; });
+      if (shared.length > 0) scored.push({ title: title, shared: shared.length });
+    });
+    scored.sort(function (a, b) { return b.shared - a.shared; });
+    return scored.slice(0, limit).map(function (x) { return x.title; });
   }
 
   // ---------- helpers ----------
@@ -601,6 +800,7 @@
     html += '<header>';
     html += '<div><h1 class="serif">Denník</h1><p>Jedlo, symptómy, aktivity a zdravie na jednom mieste</p><p style="font-size:10px;color:#C4BDAC;margin-top:4px;">verzia ' + esc(APP_VERSION) + '</p></div>';
     html += '<div class="header-actions">';
+    html += '<button class="icon-btn" id="btn-theme-toggle" title="Prepnúť tmavý/svetlý režim">' + (state.theme === "dark" ? iconSun(16, "#8A8478") : iconMoon(16, "#8A8478")) + '</button>';
     html += '<button class="icon-btn" id="btn-print" title="Export na tlač">' + iconPrinter(16, "#8A8478") + '</button>';
     html += '<button class="icon-btn" id="btn-ai-export" title="Export pre AI analýzu">' + iconSparkles(16, "#8A8478") + '</button>';
     html += '<button class="icon-btn" id="btn-import" title="Importovať dáta">' + iconUpload(16, "#8A8478") + '</button>';
@@ -1296,7 +1496,20 @@
     }
 
     // --- title field (skip for vylucovanie which uses subtype instead) ---
-    if (type !== "vylucovanie") {
+    if (type === "symptom") {
+      // Searchable "database" of previously used symptom names, to reduce
+      // near-duplicate entries (e.g. "pichanie v podrebrí vpravo" vs
+      // "pichanie v pravom podrebrí") that would otherwise fragment the
+      // statistics. Renders a text input; typing filters a dropdown of
+      // existing symptom titles, and picking one or typing a brand-new
+      // name both work — a new name just gets a similarity check on submit.
+      var titleVal = isEdit ? esc(editEntry.title) : "";
+      h += '<div class="symptom-dropdown-wrap">';
+      h += '<input class="field-title" id="field-title" placeholder="' + placeholders[type] + '" autocomplete="off" value="' + titleVal + '" />';
+      h += '<div id="symptom-dropdown-list"></div>';
+      h += '</div>';
+      h += '<div id="symptom-similar-warning"></div>';
+    } else if (type !== "vylucovanie") {
       var titleVal = isEdit ? esc(editEntry.title) : "";
       h += '<input class="field-title" id="field-title" placeholder="' + placeholders[type] + '" autocomplete="off" value="' + titleVal + '" />';
       if (!isEdit) {
@@ -1456,6 +1669,9 @@
 
   // ---------- event wiring ----------
   function attachHandlers() {
+    var themeToggleBtn = document.getElementById("btn-theme-toggle");
+    if (themeToggleBtn) themeToggleBtn.onclick = toggleTheme;
+
     var exportBtn = document.getElementById("btn-export");
     if (exportBtn) exportBtn.onclick = exportData;
 
@@ -1731,6 +1947,92 @@
         });
       }
 
+      // Symptom searchable "database" dropdown: filters existing symptom
+      // titles as the person types, and — when a not-yet-selected new name
+      // is typed — shows a non-blocking similarity warning listing existing
+      // titles that share meaningful words, so the person can catch a
+      // near-duplicate themselves before saving (per their choice: warn but
+      // don't force).
+      var symptomDropdownList = document.getElementById("symptom-dropdown-list");
+      var symptomSimilarWarning = document.getElementById("symptom-similar-warning");
+      var symptomJustPicked = false; // true right after clicking a dropdown item, to suppress its own dropdown reopening
+
+      if (symptomDropdownList && titleInput) {
+        var allSymptomTitles = getAllDistinctTitles("symptom");
+
+        function renderSymptomDropdown() {
+          var query = titleInput.value.trim().toLowerCase();
+          if (symptomJustPicked) { symptomDropdownList.innerHTML = ""; return; }
+          if (!query) { symptomDropdownList.innerHTML = ""; return; }
+
+          var matches = allSymptomTitles.filter(function (t) { return t.toLowerCase().indexOf(query) !== -1; });
+          var exactMatch = allSymptomTitles.some(function (t) { return t.toLowerCase() === query; });
+
+          if (matches.length === 0) {
+            symptomDropdownList.innerHTML = "";
+            return;
+          }
+          var html = '<div class="symptom-dropdown-list">';
+          matches.slice(0, 8).forEach(function (t) {
+            html += '<button type="button" class="symptom-dropdown-item" data-pick-symptom="' + esc(t) + '">' + esc(t) + '</button>';
+          });
+          html += '</div>';
+          symptomDropdownList.innerHTML = html;
+          symptomDropdownList.querySelectorAll("[data-pick-symptom]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              titleInput.value = btn.getAttribute("data-pick-symptom");
+              symptomJustPicked = true;
+              symptomDropdownList.innerHTML = "";
+              symptomSimilarWarning.innerHTML = "";
+              refreshSubmitState();
+            });
+          });
+        }
+
+        function renderSimilarWarning() {
+          var current = titleInput.value.trim();
+          if (!current || symptomJustPicked) { symptomSimilarWarning.innerHTML = ""; return; }
+          var exactMatch = allSymptomTitles.some(function (t) { return t.toLowerCase() === current.toLowerCase(); });
+          if (exactMatch) { symptomSimilarWarning.innerHTML = ""; return; }
+
+          var similar = findSimilarTitles(current, "symptom");
+          if (similar.length === 0) { symptomSimilarWarning.innerHTML = ""; return; }
+
+          var html = '<div class="symptom-similar-warning"><p>Toto vyzerá podobne ako už zaznamenané symptómy — vyber jeden z nich, ak ide o to isté, alebo pokračuj s novým názvom:</p>';
+          similar.forEach(function (t) {
+            html += '<button type="button" class="symptom-similar-item" data-pick-symptom-similar="' + esc(t) + '">' + esc(t) + '</button>';
+          });
+          html += '</div>';
+          symptomSimilarWarning.innerHTML = html;
+          symptomSimilarWarning.querySelectorAll("[data-pick-symptom-similar]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              titleInput.value = btn.getAttribute("data-pick-symptom-similar");
+              symptomJustPicked = true;
+              symptomDropdownList.innerHTML = "";
+              symptomSimilarWarning.innerHTML = "";
+              refreshSubmitState();
+            });
+          });
+        }
+
+        titleInput.addEventListener("input", function () {
+          symptomJustPicked = false;
+          renderSymptomDropdown();
+          renderSimilarWarning();
+        });
+        titleInput.addEventListener("blur", function () {
+          // Delay so a click on a dropdown item (which fires blur first) still registers.
+          setTimeout(function () { symptomDropdownList.innerHTML = ""; }, 150);
+        });
+        titleInput.addEventListener("focus", function () {
+          if (titleInput.value.trim()) renderSymptomDropdown();
+        });
+
+        // If editing/duplicating with a pre-filled value, run the similarity
+        // check once so a pre-filled near-duplicate still surfaces.
+        if (titleInput.value.trim()) renderSimilarWarning();
+      }
+
       // severity chips
       var selectedSeverity = editEntry && editEntry.severity ? editEntry.severity : 1;
       var severityRow = document.getElementById("severity-row");
@@ -1886,6 +2188,7 @@
     }, 0);
   }
 
+  applyTheme(state.theme);
   render();
 })();
 </script>
